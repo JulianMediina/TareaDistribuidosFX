@@ -3,7 +3,10 @@ package co.edu.uptc.model;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.*;
@@ -11,7 +14,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
-import javafx.stage.FileChooser;
+import java.util.ArrayList;
+import java.util.List;
+import javafx.scene.layout.FlowPane;
 
 public class ClienteSocket extends Application {
 
@@ -22,6 +27,8 @@ public class ClienteSocket extends Application {
     private TextField messageField;
     private String nombreUsuario;
     private Stage stage;
+
+    private static final String IMAGE_DIRECTORY = "/filesData"; // Directorio donde se guardarán las imágenes
 
     public static void main(String[] args) {
         launch(args);
@@ -58,14 +65,14 @@ public class ClienteSocket extends Application {
         Button chooseImageButton = new Button("Seleccionar imagen");
         chooseImageButton.setOnAction(e -> selectAndSendImage());
 
+        Button viewImagesButton = new Button("Ver imágenes");
+        viewImagesButton.setOnAction(e -> showImages());
+
         Label userLabel = new Label("Usuario: ");
         Label usernameLabel = new Label();
 
-        Button showImagesButton = new Button("Mostrar Imágenes");
-        showImagesButton.setOnAction(e -> showImages());
-
         VBox vbox = new VBox();
-        vbox.getChildren().addAll(userLabel, usernameLabel, chatArea, messageField, sendButton, chooseImageButton);
+        vbox.getChildren().addAll(userLabel, usernameLabel, chatArea, messageField, sendButton, chooseImageButton, viewImagesButton);
         Scene scene = new Scene(vbox, 400, 300);
         primaryStage.setScene(scene);
 
@@ -166,7 +173,50 @@ public class ClienteSocket extends Application {
     }
 
     private void showImages() {
+        Stage galleryStage = new Stage();
+        galleryStage.setTitle("Galería de Imágenes");
 
+        FlowPane flowPane = new FlowPane();
+        flowPane.setHgap(10);
+        flowPane.setVgap(10);
+
+        List<File> imageFiles = loadImageFilesFromDirectory(IMAGE_DIRECTORY);
+        for (File file : imageFiles) {
+            try {
+                Image image = new Image(new FileInputStream(file));
+                ImageView imageView = new ImageView(image);
+                imageView.setFitWidth(200);
+                imageView.setFitHeight(200);
+                flowPane.getChildren().add(imageView);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        Scene scene = new Scene(flowPane, 800, 600);
+        galleryStage.setScene(scene);
+        galleryStage.show();
+    }
+
+    private List<File> loadImageFilesFromDirectory(String directoryPath) {
+        List<File> imageFiles = new ArrayList<>();
+        File directory = new File(directoryPath);
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (isImageFile(file)) {
+                        imageFiles.add(file);
+                    }
+                }
+            }
+        }
+        return imageFiles;
+    }
+
+    private boolean isImageFile(File file) {
+        String name = file.getName().toLowerCase();
+        return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif");
     }
 
     public void stop() {
